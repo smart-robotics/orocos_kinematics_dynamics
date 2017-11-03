@@ -1125,6 +1125,11 @@ IMETHOD Vector diff(const Vector& a,const Vector& b,double dt) {
 
 IMETHOD Vector diff(const Rotation& R_a_b1,const Rotation& R_a_b2,double dt) {
 	Rotation R_b1_b2(R_a_b1.Inverse()*R_a_b2);
+    // Prevent non-orthonormal matrices
+    //double roll, pitch, yaw;
+    //R_b1_b2.GetRPY(roll, pitch, yaw);
+    //R_b1_b2 = Rotation::RPY(roll, pitch, yaw);
+    //
 	return R_a_b1 * R_b1_b2.GetRot() / dt;
 }
 
