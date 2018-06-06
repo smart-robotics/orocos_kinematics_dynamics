@@ -87,10 +87,16 @@ namespace KDL {
 
     double Vector2::Norm() const
     {
-        if (fabs(data[0]) > fabs(data[1]) ) {
-            return data[0]*sqrt(1+sqr(data[1]/data[0]));
+        double tmp1 = fabs(data[0]);
+        double tmp2 = fabs(data[1]);
+        
+        if (tmp1 == 0.0 && tmp2 == 0.0)
+            return 0.0;
+
+        if (tmp1 > tmp2) {
+            return tmp1*sqrt(1+sqr(data[1]/data[0]));
         } else {
-            return data[1]*sqrt(1+sqr(data[0]/data[1]));
+            return tmp2*sqrt(1+sqr(data[0]/data[1]));
         }
     }
     // makes v a unitvector and returns the norm of v.
@@ -342,10 +348,10 @@ Vector Rotation::GetRot() const
 
 /** Returns the rotation angle around the equiv. axis
  * @param axis the rotation axis is returned in this variable
- * @param eps :  in the case of angle == 0 : rot axis is undefined and choosen
+ * @param eps :  in the case of angle == 0 : rot axis is undefined and chosen
  *                                         to be the Z-axis
  *               in the case of angle == PI : 2 solutions, positive Z-component
- *                                            of the axis is choosen.
+ *                                            of the axis is chosen.
  * @result returns the rotation angle (between [0..PI] )
  * /todo :
  *   Check corresponding routines in rframes and rrframes
