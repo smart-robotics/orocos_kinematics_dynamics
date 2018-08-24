@@ -24,83 +24,100 @@
 #include "chainiksolverpos_nr_jl.hpp"
 
 #include <limits>
+#include <iostream>
+//#include <frames_io.hpp>
 
 namespace KDL
 {
-    ChainIkSolverPos_NR_JL::ChainIkSolverPos_NR_JL(const Chain& _chain, const JntArray& _q_min, const JntArray& _q_max, ChainFkSolverPos& _fksolver,ChainIkSolverVel& _iksolver,
-                                             unsigned int _maxiter, double _eps):
-        chain(_chain), nj(chain.getNrOfJoints()),
-        q_min(_q_min), q_max(_q_max),
-        iksolver(_iksolver), fksolver(_fksolver),
-        delta_q(_chain.getNrOfJoints()),
-        maxiter(_maxiter),eps(_eps)
+    ChainIkSolverPos_NR_JL::ChainIkSolverPos_NR_JL(const Chain &_chain, const JntArray &_q_min, const JntArray &_q_max,
+                                                   ChainFkSolverPos &_fksolver, ChainIkSolverVel &_iksolver,
+                                                   unsigned int _maxiter, double _eps) :
+            chain(_chain), nj(chain.getNrOfJoints()),
+            q_min(_q_min), q_max(_q_max),
+            iksolver(_iksolver), fksolver(_fksolver),
+            delta_q(_chain.getNrOfJoints()),
+            maxiter(_maxiter), eps(_eps)
     {
 
     }
 
-    ChainIkSolverPos_NR_JL::ChainIkSolverPos_NR_JL(const Chain& _chain, ChainFkSolverPos& _fksolver,ChainIkSolverVel& _iksolver,
-            unsigned int _maxiter, double _eps):
-         chain(_chain), nj(chain.getNrOfJoints()),
-         q_min(nj), q_max(nj),
-         iksolver(_iksolver), fksolver(_fksolver),
-         delta_q(nj),
-         maxiter(_maxiter),eps(_eps)
+    ChainIkSolverPos_NR_JL::ChainIkSolverPos_NR_JL(const Chain &_chain, ChainFkSolverPos &_fksolver,
+                                                   ChainIkSolverVel &_iksolver,
+                                                   unsigned int _maxiter, double _eps) :
+            chain(_chain), nj(chain.getNrOfJoints()),
+            q_min(nj), q_max(nj),
+            iksolver(_iksolver), fksolver(_fksolver),
+            delta_q(nj),
+            maxiter(_maxiter), eps(_eps)
     {
         q_min.data.setConstant(std::numeric_limits<double>::min());
         q_max.data.setConstant(std::numeric_limits<double>::max());
     }
 
-    void ChainIkSolverPos_NR_JL::updateInternalDataStructures() {
-       nj = chain.getNrOfJoints();
-       q_min.data.conservativeResizeLike(Eigen::VectorXd::Constant(nj,std::numeric_limits<double>::min()));
-       q_max.data.conservativeResizeLike(Eigen::VectorXd::Constant(nj,std::numeric_limits<double>::max()));
-       iksolver.updateInternalDataStructures();
-       fksolver.updateInternalDataStructures();
-       delta_q.resize(nj);
+    void ChainIkSolverPos_NR_JL::updateInternalDataStructures()
+    {
+        nj = chain.getNrOfJoints();
+        q_min.data.conservativeResizeLike(Eigen::VectorXd::Constant(nj, std::numeric_limits<double>::min()));
+        q_max.data.conservativeResizeLike(Eigen::VectorXd::Constant(nj, std::numeric_limits<double>::max()));
+        iksolver.updateInternalDataStructures();
+        fksolver.updateInternalDataStructures();
+        delta_q.resize(nj);
     }
 
-    int ChainIkSolverPos_NR_JL::CartToJnt(const JntArray& q_init, const Frame& p_in, JntArray& q_out)
+    int ChainIkSolverPos_NR_JL::CartToJnt(const JntArray &q_init, const Frame &p_in, JntArray &q_out)
     {
-        if(nj != chain.getNrOfJoints())
+        if (nj != chain.getNrOfJoints())
             return (error = E_NOT_UP_TO_DATE);
 
-        if(nj != q_init.rows() || nj != q_out.rows() || nj != q_min.rows() || nj != q_max.rows())
+        if (nj != q_init.rows() || nj != q_out.rows() || nj != q_min.rows() || nj != q_max.rows())
             return (error = E_SIZE_MISMATCH);
 
-            q_out = q_init;
+        q_out = q_init;
 
-            unsigned int i;
-            for(i=0;i<maxiter;i++){
-                if ( fksolver.JntToCart(q_out,f) < 0)
-                    return (error = E_FKSOLVERPOS_FAILED);
-                delta_twist = diff(f,p_in);
+        unsigned int i;
+        for (i = 0; i < maxiter; i++)
+        {
+            if (fksolver.JntToCart(q_out, f) < 0)
+                return (error = E_FKSOLVERPOS_FAILED);
 
-        if(Equal(delta_twist,Twist::Zero(),eps))
-            break;
+            KDL::Frame d = f.Inverse() * p_in;
+            if (d.p.Norm() < eps && d.M.data[0] > 1 - eps && d.M.data[4] > 1 - eps && d.M.data[8] > 1 - eps)
+                break;
 
-        if ( iksolver.CartToJnt(q_out,delta_twist,delta_q) < 0)
-            return (error = E_IKSOLVERVEL_FAILED);
-                Add(q_out,delta_q,q_out);
+            delta_twist = diff(f, p_in);
 
-                for(unsigned int j=0; j<q_min.rows(); j++) {
-                  if(q_out(j) < q_min(j))
+//            if (Equal(delta_twist, Twist::Zero(), eps))
+//                break;
+
+            if (iksolver.CartToJnt(q_out, delta_twist, delta_q) < 0)
+                return (error = E_IKSOLVERVEL_FAILED);
+            Add(q_out, delta_q, q_out);
+
+            for (unsigned int j = 0; j < q_min.rows(); j++)
+            {
+                if (q_out(j) < q_min(j))
                     q_out(j) = q_min(j);
-                }
-
-
-                for(unsigned int j=0; j<q_max.rows(); j++) {
-                    if(q_out(j) > q_max(j))
-                      q_out(j) = q_max(j);
-                }
             }
 
-            if(i!=maxiter)
-                return (error = E_NOERROR);
-            else
-                return (error = E_MAX_ITERATIONS_EXCEEDED);
+
+            for (unsigned int j = 0; j < q_max.rows(); j++)
+            {
+                if (q_out(j) > q_max(j))
+                    q_out(j) = q_max(j);
+            }
+        }
+
+        if (i != maxiter)
+            return (error = E_NOERROR);
+        else
+        {
+            //std::cout << "delta_twist " << delta_twist << std::endl;
+            return (error = E_MAX_ITERATIONS_EXCEEDED);
+        }
     }
 
-    int ChainIkSolverPos_NR_JL::setJointLimits(const JntArray& q_min_in, const JntArray& q_max_in) {
+    int ChainIkSolverPos_NR_JL::setJointLimits(const JntArray &q_min_in, const JntArray &q_max_in)
+    {
         if (q_min_in.rows() != nj || q_max_in.rows() != nj)
             return (error = E_SIZE_MISMATCH);
         q_min = q_min_in;
@@ -112,11 +129,10 @@ namespace KDL
     {
     }
 
-    const char* ChainIkSolverPos_NR_JL::strError(const int error) const
+    const char *ChainIkSolverPos_NR_JL::strError(const int error) const
     {
         if (E_FKSOLVERPOS_FAILED == error) return "Internal forward position solver failed.";
         else if (E_IKSOLVERVEL_FAILED == error) return "Internal inverse velocity solver failed.";
         else return SolverI::strError(error);
     }
 }
-
