@@ -132,6 +132,9 @@ public:
     Vector JointAxis() const /Factory/;
     Vector JointOrigin() const /Factory/;
     std::string getName()const;
+    const double& getInertia()const;
+    const double& getDamping()const;
+    const double& getStiffness()const;
 
     JointType getType() const;
     std::string getTypeName() const;
@@ -674,10 +677,21 @@ using namespace KDL;
 %End
 public:
     ChainJntToJacSolver(const Chain& chain);
-    int JntToJac(const JntArray& q_in,Jacobian& jac);
+    int JntToJac(const JntArray& q_in,Jacobian& jac, int seg_nr=-1);
     virtual void updateInternalDataStructures();
 };
 
+class ChainJntToJacDotSolver : SolverI
+{
+%TypeHeaderCode
+#include <kdl/chainjnttojacdotsolver.hpp>
+using namespace KDL;
+%End
+public:
+    ChainJntToJacDotSolver(const Chain& chain);
+    int JntToJacDot(const JntArrayVel& q_in,Jacobian& jac, int seg_nr=-1);
+    virtual void updateInternalDataStructures();
+};
 
 class ChainIdSolver : SolverI
 {
