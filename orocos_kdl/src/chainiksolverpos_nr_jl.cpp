@@ -93,13 +93,6 @@ namespace KDL
                 return (error = E_IKSOLVERVEL_FAILED);
             Add(q_out, delta_q, q_out);
 
-            for (unsigned int j = 0; j < q_min.rows(); j++)
-            {
-                if (q_out(j) < q_min(j))
-                    q_out(j) = q_min(j);
-            }
-
-
             for (unsigned int j = 0; j < q_max.rows(); j++)
             {
                 if (q_out(j) > q_max(j))

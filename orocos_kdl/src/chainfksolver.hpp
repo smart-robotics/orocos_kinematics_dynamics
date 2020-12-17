@@ -32,8 +32,8 @@
 
 namespace KDL {
     /**
-	  * \brief This <strong>abstract</strong> class encapsulates a
-	  * solver for the forward position kinematics for a KDL::Chain.
+     * \brief This <strong>abstract</strong> class encapsulates a
+     * solver for the forward position kinematics for a KDL::Chain.
      *
      * @ingroup KinematicFamily
      */
@@ -104,11 +104,10 @@ namespace KDL {
      *
      * @ingroup KinematicFamily
      */
-
     class ChainFkSolverAcc : public KDL::SolverI {
     public:
         /**
-         * Calculate forward position, velocity and accelaration
+         * Calculate forward position, velocity and acceleration
          * kinematics, from joint coordinates to cartesian coordinates
          *
          * @param q_in input joint coordinates (position, velocity and
@@ -120,12 +119,12 @@ namespace KDL {
          */
     virtual int JntToCart(const JntArrayAcc& q_in, FrameAcc& out,int segmentNr=-1)=0;
         /**
-         * Calculate forward position, velocity and accelaration
+         * Calculate forward position, velocity and acceleration
          * kinematics, from joint coordinates to cartesian coordinates
          *
          * @param q_in input joint coordinates (position, velocity and
          * acceleration
-         @param out output cartesian coordinates (position, velocity
+         * @param out output cartesian coordinates (position, velocity
          * and acceleration for all segments
          *
          * @return if < 0 something went wrong

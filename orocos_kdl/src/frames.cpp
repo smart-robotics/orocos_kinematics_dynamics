@@ -26,9 +26,8 @@
  ***************************************************************************/
 
 #include "frames.hpp"
+#include "utilities/utility.h"
 
-#define _USE_MATH_DEFINES  // For MSVC
-#include <math.h>
 #include <algorithm>
 
 namespace KDL {
@@ -85,13 +84,13 @@ namespace KDL {
                      );
     }
 
-    double Vector2::Norm() const
+    double Vector2::Norm(double eps) const
     {
         double tmp1 = fabs(data[0]);
         double tmp2 = fabs(data[1]);
         
-        if (tmp1 == 0.0 && tmp2 == 0.0)
-            return 0.0;
+        if (tmp1 < eps && tmp2 < eps)
+            return 0;
 
         if (tmp1 > tmp2) {
             return tmp1*sqrt(1+sqr(data[1]/data[0]));
@@ -100,13 +99,13 @@ namespace KDL {
         }
     }
     // makes v a unitvector and returns the norm of v.
-    // if v is smaller than eps, Vector(1,0,0) is returned with norm 0.
+    // if v is smaller than eps, Vector(1,0) is returned with norm 0.
     // if this is not good, check the return value of this method.
     double Vector2::Normalize(double eps) {
         double v = this->Norm();
         if (v < eps) {
             *this = Vector2(1,0);
-            return v;
+            return 0;
         } else {
             *this = (*this)/v;
             return v;
@@ -115,7 +114,7 @@ namespace KDL {
 
 
     // do some effort not to lose precision
-    double Vector::Norm() const
+    double Vector::Norm(double eps) const
     {
         double tmp1;
         double tmp2;
@@ -124,7 +123,7 @@ namespace KDL {
         if (tmp1 >= tmp2) {
             tmp2=fabs(data[2]);
             if (tmp1 >= tmp2) {
-                if (tmp1 == 0) {
+                if (tmp1 < eps) {
                     // only to everything exactly zero case, all other are handled correctly
                     return 0;
                 }
@@ -149,7 +148,7 @@ namespace KDL {
         double v = this->Norm();
         if (v < eps) {
             *this = Vector(1,0,0);
-            return v;
+            return 0;
         } else {
             *this = (*this)/v;
             return v;
@@ -251,7 +250,7 @@ void Rotation::GetRPY(double& roll,double& pitch,double& yaw) const
     {
 		double epsilon=1E-12;
 		pitch = atan2(-data[6], sqrt( sqr(data[0]) +sqr(data[3]) )  );
-        if ( fabs(pitch) > (M_PI/2.0-epsilon) ) {
+        if ( fabs(pitch) > (PI_2-epsilon) ) {
             yaw = atan2(	-data[1], data[4]);
             roll  = 0.0 ;
         } else {
@@ -384,15 +383,13 @@ double Rotation::GetRotAngle(Vector& axis,double eps) const {
         }
 
         // otherwise this singularity is angle = 180
-        angle = M_PI;
+        angle = PI;
         double xx = (data[0] + 1) / 2;
         double yy = (data[4] + 1) / 2;
         double zz = (data[8] + 1) / 2;
         double xy = (data[1] + data[3]) / 4;
         double xz = (data[2] + data[6]) / 4;
         double yz = (data[5] + data[7]) / 4;
-
-        double half_sqrt_2 = 0.5 * sqrt(2.0);
 
         if ((xx > yy) && (xx > zz))
         {
@@ -419,15 +416,13 @@ double Rotation::GetRotAngle(Vector& axis,double eps) const {
         return angle; // return 180 deg rotation
     }
 
-    // If the matrix is slightly non-orthogonal, `f` may be out of the (-1, +1) range.
-    // Therefore, clamp it between those values to avoid NaNs.
     double f = (data[0] + data[4] + data[8] - 1) / 2;
-    angle = acos(std::max(-1.0, std::min(1.0, f)));
 
     x = (data[7] - data[5]);
     y = (data[2] - data[6]);
     z = (data[3] - data[1]);
     axis = KDL::Vector(x, y, z);
+    angle = atan2(axis.Norm()/2,f);
     axis.Normalize();
     return angle;
 }

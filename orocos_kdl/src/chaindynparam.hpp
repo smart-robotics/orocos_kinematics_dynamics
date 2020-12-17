@@ -1,8 +1,8 @@
-// Copyright  (C)  2009  Dominick Vanthienen <dominick dot vanthienen at mech dot kuleuven dot be>
+// Copyright  (C)  2009  Dominick Vanthienen <dominick dot vanthienen at intermodalics dot eu>
 
 // Version: 1.0
-// Author: Dominick Vanthienen <dominick dot vanthienen at mech dot kuleuven dot be>
-// Maintainer: Ruben Smits <ruben dot smits at mech dot kuleuven dot be>
+// Author: Dominick Vanthienen <dominick dot vanthienen at intermodalics dot eu>
+// Maintainer: Ruben Smits <ruben dot smits at intermodalics dot eu>
 // URL: http://www.orocos.org/kdl
 
 // This library is free software; you can redistribute it and/or
@@ -44,7 +44,7 @@ namespace KDL {
      * (expressed in the segments reference frame) and the dynamical
      * parameters of the segments.
      */
-    class ChainDynParam : SolverI
+    class ChainDynParam : public SolverI
     {
     public:
         ChainDynParam(const Chain& chain, Vector _grav);
@@ -59,7 +59,7 @@ namespace KDL {
 
     private:
         const Chain& chain;
-	int nr;
+	int nr;  // unused, remove in a future version
 	unsigned int nj;
         unsigned int ns;	
 	Vector grav;
